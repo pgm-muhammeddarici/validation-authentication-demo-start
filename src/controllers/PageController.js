@@ -1,6 +1,7 @@
 /**
  * A Page Controller
  */
+import { validationResult } from "express-validator";
 
 export const home = async (req, res) => {
   res.render("home", {});
@@ -15,25 +16,66 @@ export const contact = (req, res) => {
       name: "fullname",
       label: "Volledige naam",
       type: "text",
+      err: req.formErrorFields?.fullname ? req.formErrorFields.fullname : "",
+      value: req.body?.fullname ? req.body.fullname : "",
     },
     {
       name: "email",
       label: "E-mail",
       type: "text",
+      err: req.formErrorFields?.email ? req.formErrorFields.email : "",
+      value: req.body?.email ? req.body.email : "",
     },
     {
       name: "message",
       label: "Bericht",
       type: "textarea",
+      err: req.formErrorFields?.message ? req.formErrorFields.message : "",
+      value: req.body?.message ? req.body.message : "",
     },
   ];
 
+  const flash = req.flash || {};
+
   res.render("contact", {
-    inputs
+    inputs,
+    flash,
   });
 }
 
 /**
  * This function handles the post request for the contact page
  */
-export const postContact = async (req, res, next) => {};
+export const postContact = async (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    req.formErrorFields = {}
+    errors.array().forEach(error => {
+      req.formErrorFields[error.path] = error.msg
+    });
+
+    req.flash = {
+      type: "danger",
+      message: "There was an error with your form submission",
+    };
+
+    return next();
+  }
+
+  try {
+    console.log('YAY WE CAN SEND MAİLS');
+    req.flash = {
+      type: "success",
+      message: "Your message has been sent",
+    }
+    req.body = {};
+    next();
+    
+  } catch (error) {
+    console.error(error);
+    
+    
+  }
+};
+
+
